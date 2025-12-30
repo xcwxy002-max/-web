@@ -1,0 +1,5 @@
+{
+  "name": "企业智能体平台",
+  "description": "一个企业内部平台，以此利用Google Gemini API提供企业分析、招投标辅助和政策追踪等智能体服务。",
+  "requestFramePermissions": []
+}
