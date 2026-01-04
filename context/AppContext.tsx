@@ -8,6 +8,7 @@ interface AppContextType {
   followedCompanies: FollowedCompany[];
   followCompany: (company: FollowedCompany) => void;
   unfollowCompany: (id: string) => void;
+  markAsRead: (companyId: string) => void;
   history: HistoryItem[];
   addToHistory: (item: HistoryItem) => void;
 }
@@ -18,7 +19,7 @@ const defaultUser: User = {
   industry: [Industry.TECHNOLOGY],
   role: UserRole.SALES,
   avatar: "https://picsum.photos/200",
-  businessCapabilities: "我们提供企业级云计算解决方案、大数据分析平台以及AI智能客服系统。核心优势在于高并发处理能力和金融级安全防护。"
+  businessCapabilities: "我们提供企业级云计算解决方案、大数据分析平台以及AI智能客服系统。"
 };
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -29,35 +30,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     { 
       id: '1', 
       name: '科技集团有限公司', 
-      latestOpportunitySummary: '大规模企业上云迁移招标项目', 
       dateAdded: '2023-10-25', 
       industry: '云计算',
-      opportunities: [
-        { title: '企业上云迁移', type: '招标', description: '计划将核心业务系统迁移至混合云环境。' },
-        { title: '数据中台建设', type: '咨询', description: '寻求大数据治理与中台架构咨询。' }
-      ]
+      recentUpdates: [
+        { id: 'u1', text: '发布“核心业务系统迁移”招标项目，预算800万', date: '2025-05-20', isRead: false, type: '招标' },
+        { id: 'u2', text: '正在招聘“高级云架构师”，侧重混合云治理', date: '2025-05-18', isRead: true, type: '招聘' }
+      ],
+      opportunities: []
+    },
+    { 
+      id: '2', 
+      name: '未来能源动力', 
+      dateAdded: '2023-11-02', 
+      industry: '新能源',
+      recentUpdates: [
+        { id: 'u3', text: '财报显示Q1数字化转型预算增长30%', date: '2025-05-19', isRead: false, type: '财报' }
+      ],
+      opportunities: []
     }
   ]);
   
-  const [history, setHistory] = useState<HistoryItem[]>([
-    { 
-      id: 'h1', 
-      category: HistoryCategory.MONITORING, 
-      query: '科技集团', 
-      date: '2023-10-20', 
-      summary: '已生成深度研报。',
-    },
-  ]);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
 
-  const updateUser = (updates: Partial<User>) => {
-    setUser(prev => ({ ...prev, ...updates }));
-  };
+  const updateUser = (updates: Partial<User>) => setUser(prev => ({ ...prev, ...updates }));
 
   const followCompany = (company: FollowedCompany) => {
-    if (followedCompanies.length >= 10) {
-      alert("关注上限为 10 家。");
-      return;
-    }
     if (!followedCompanies.find(c => c.name === company.name)) {
       setFollowedCompanies(prev => [company, ...prev]);
     }
@@ -67,19 +64,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setFollowedCompanies(prev => prev.filter(c => c.id !== id));
   };
 
-  const addToHistory = (item: HistoryItem) => {
-    setHistory(prev => [item, ...prev]);
+  const markAsRead = (companyId: string) => {
+    setFollowedCompanies(prev => prev.map(c => {
+      if (c.id === companyId) {
+        return { ...c, recentUpdates: c.recentUpdates.map(u => ({ ...u, isRead: true })) };
+      }
+      return c;
+    }));
   };
+
+  const addToHistory = (item: HistoryItem) => setHistory(prev => [item, ...prev]);
 
   return (
     <AppContext.Provider value={{ 
-      user, 
-      updateUser, 
-      followedCompanies, 
-      followCompany, 
-      unfollowCompany, 
-      history, 
-      addToHistory
+      user, updateUser, followedCompanies, followCompany, unfollowCompany, markAsRead, history, addToHistory
     }}>
       {children}
     </AppContext.Provider>

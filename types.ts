@@ -20,6 +20,16 @@ export enum HistoryCategory {
   MONITORING = '企业商机监控'
 }
 
+export interface AgentApp {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  category: HistoryCategory;
+  placeholder: string;
+  color: string;
+}
+
 export interface Policy {
   id: string;
   title: string;
@@ -35,12 +45,20 @@ export interface DataSource {
   url: string;
 }
 
+export interface CompanyUpdate {
+  id: string;
+  text: string;
+  date: string;
+  isRead: boolean;
+  type: '招标' | '招聘' | '咨询' | '财报';
+}
+
 export interface FollowedCompany {
   id: string;
   name: string;
-  latestOpportunitySummary: string;
   dateAdded: string;
   industry?: string;
+  recentUpdates: CompanyUpdate[];
   opportunities: {
     title: string;
     type: '招标' | '招聘' | '咨询';
