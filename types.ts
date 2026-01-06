@@ -24,10 +24,20 @@ export interface AgentApp {
   id: string;
   name: string;
   description: string;
-  icon: string;
+  icon: string; // Icon name from lucide-react
   category: HistoryCategory;
   placeholder: string;
   color: string;
+  pinned: boolean; // 是否显示在侧边栏
+  features: string[]; // 支持的子功能，如 ['chat', 'history']
+}
+
+export interface DashboardWidget {
+  id: string;
+  type: 'monitoring' | 'quick_access' | 'stats';
+  title: string;
+  visible: boolean;
+  order: number;
 }
 
 export interface Policy {

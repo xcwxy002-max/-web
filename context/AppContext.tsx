@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState } from 'react';
-import { User, Industry, FollowedCompany, HistoryItem, UserRole, HistoryCategory } from '../types';
+import { User, Industry, FollowedCompany, HistoryItem, UserRole, HistoryCategory, AgentApp, DashboardWidget } from '../types';
 
 interface AppContextType {
   user: User;
@@ -11,6 +11,13 @@ interface AppContextType {
   markAsRead: (companyId: string) => void;
   history: HistoryItem[];
   addToHistory: (item: HistoryItem) => void;
+  // 新增 Agent 和 布局管理
+  agents: AgentApp[];
+  toggleAgentPin: (agentId: string) => void;
+  reorderAgents: (newOrderIds: string[]) => void; 
+  dashboardWidgets: DashboardWidget[];
+  toggleWidgetVisibility: (widgetId: string) => void;
+  reorderWidgets: (dragIndex: number, hoverIndex: number) => void;
 }
 
 const defaultUser: User = {
@@ -22,10 +29,54 @@ const defaultUser: User = {
   businessCapabilities: "我们提供企业级云计算解决方案、大数据分析平台以及AI智能客服系统。"
 };
 
+const INITIAL_AGENTS: AgentApp[] = [
+  {
+    id: 'enterprise-analyst',
+    name: '企业研报专家',
+    description: '深度挖掘核心商机与风险',
+    icon: 'Building2',
+    category: HistoryCategory.MONITORING,
+    placeholder: '输入目标企业全称，启动深度研判...',
+    color: 'blue',
+    pinned: true,
+    features: ['chat', 'history']
+  },
+  {
+    id: 'bid-expert',
+    name: '招投标助手',
+    description: '解析招标文件并生成策略',
+    icon: 'Gavel',
+    category: HistoryCategory.REGULAR,
+    placeholder: '粘贴招标文件内容或输入项目名称...',
+    color: 'indigo',
+    pinned: true,
+    features: ['chat', 'history']
+  },
+  {
+    id: 'policy-tracker',
+    name: '政策风控官',
+    description: '追踪行业规制及业务影响',
+    icon: 'Newspaper',
+    category: HistoryCategory.POLICY,
+    placeholder: '输入政策关键词或粘贴政策原文...',
+    color: 'emerald',
+    pinned: true,
+    features: ['chat', 'history']
+  }
+];
+
+const INITIAL_WIDGETS: DashboardWidget[] = [
+  { id: 'w-monitor', type: 'monitoring', title: '企业商机情报雷达', visible: true, order: 0 },
+  { id: 'w-stats', type: 'stats', title: '整体数据概览', visible: false, order: 1 } // 示例隐藏组件
+];
+
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User>(defaultUser);
+  const [agents, setAgents] = useState<AgentApp[]>(INITIAL_AGENTS);
+  const [dashboardWidgets, setDashboardWidgets] = useState<DashboardWidget[]>(INITIAL_WIDGETS);
+  
   const [followedCompanies, setFollowedCompanies] = useState<FollowedCompany[]>([
     { 
       id: '1', 
@@ -75,9 +126,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const addToHistory = (item: HistoryItem) => setHistory(prev => [item, ...prev]);
 
+  const toggleAgentPin = (agentId: string) => {
+    setAgents(prev => prev.map(a => a.id === agentId ? { ...a, pinned: !a.pinned } : a));
+  };
+
+  // Agent 排序：接收新的 ID 列表，未在列表中的（未固定的）将追加在后面
+  const reorderAgents = (newOrderIds: string[]) => {
+    const agentMap = new Map(agents.map(a => [a.id, a]));
+    const newAgents = newOrderIds.map(id => agentMap.get(id)).filter((a): a is AgentApp => !!a);
+    
+    // 找出未在 newOrderIds 中的 agents (通常是未 pinned 的)，保持它们在数组末尾
+    const processedIds = new Set(newOrderIds);
+    const remainingAgents = agents.filter(a => !processedIds.has(a.id));
+    
+    setAgents([...newAgents, ...remainingAgents]);
+  };
+
+  const toggleWidgetVisibility = (widgetId: string) => {
+    setDashboardWidgets(prev => prev.map(w => w.id === widgetId ? { ...w, visible: !w.visible } : w));
+  };
+
+  const reorderWidgets = (dragIndex: number, hoverIndex: number) => {
+    if (hoverIndex < 0 || hoverIndex >= dashboardWidgets.length) return;
+    const newWidgets = [...dashboardWidgets];
+    const draggedItem = newWidgets[dragIndex];
+    newWidgets.splice(dragIndex, 1);
+    newWidgets.splice(hoverIndex, 0, draggedItem);
+    setDashboardWidgets(newWidgets.map((w, index) => ({ ...w, order: index })));
+  };
+
   return (
     <AppContext.Provider value={{ 
-      user, updateUser, followedCompanies, followCompany, unfollowCompany, markAsRead, history, addToHistory
+      user, updateUser, followedCompanies, followCompany, unfollowCompany, markAsRead, history, addToHistory,
+      agents, toggleAgentPin, reorderAgents, dashboardWidgets, toggleWidgetVisibility, reorderWidgets
     }}>
       {children}
     </AppContext.Provider>
